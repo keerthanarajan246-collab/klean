@@ -1738,7 +1738,6 @@ if (!in_array($page, $allowedPages)) {
       background: rgba(108, 63, 244, 0.15);
       border-left: 3px solid var(--primary);
     }
-
     /* Dashboard Layouts */
     .dashboard-layout {
       display: flex;
@@ -1751,6 +1750,11 @@ if (!in_array($page, $allowedPages)) {
       display: flex;
       flex-direction: column;
       border-right: 1px solid rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
+    }
+    .dashboard-sidebar .sidebar-logo {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       flex-shrink: 0;
     }
     .dashboard-sidebar .nav-link-klean {
@@ -1777,6 +1781,9 @@ if (!in_array($page, $allowedPages)) {
       flex-grow: 1;
       padding: 2rem;
       overflow-y: auto;
+    }
+    .progress-bar-custom {
+      background-color: var(--primary) !important;
     }
 
     /* CSS Charts */
@@ -1945,7 +1952,7 @@ if (!in_array($page, $allowedPages)) {
   STICKY NAVBAR
   ========================================================================= -->
   <nav class="navbar navbar-expand-lg navbar-light sticky-top klean-navbar">
-    <div class="container">
+    <div class="container-fluid px-4 px-lg-5">
       
       <!-- Brand Logo -->
       <a class="navbar-brand d-flex align-items-center gap-2" href="#" onclick="switchView('landing-view');return false;">
