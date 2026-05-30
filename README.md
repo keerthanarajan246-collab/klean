@@ -161,9 +161,19 @@ http://localhost/klean/index.php
 Every active `POST` transaction carries a token checked on the server side:
  
 ```php
-// index.php — Section 5
+// index.php — Section 5 (AJAX API Handler)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = $_POST['csrf_token'] ?? '';
+    $headers = getallheaders();
+    $token = $_POST['csrf_token'] ?? $headers['X-CSRF-Token'] ?? $headers['x-csrf-token'] ?? '';
+    
+    // Fallback check for JSON payloads
+    if (empty($token)) {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!empty($input['csrf_token'])) {
+            $token = $input['csrf_token'];
+        }
+    }
+    
     if (empty($token) || $token !== ($_SESSION['csrf_token'] ?? '')) {
         echo json_encode([
             'success' => false,
@@ -208,10 +218,11 @@ function sanitizeInput($data) {
  
 ```
 klean/
-└── index.php        # Entire application (PHP + HTML + CSS + JS)
+├── index.php        # Entire application (PHP + HTML + CSS + JS)
+└── db-test.php      # Standalone PostgreSQL Database Explorer (Visual Utility)
 ```
  
-Everything lives in a single file:
+The project includes the main application file and a custom database inspection utility:
  
 ```
 index.php
@@ -224,6 +235,8 @@ index.php
 ├── Section 7  — <style> (all custom CSS inline)
 ├── Section 8  — HTML Views (14 SPA views)
 └── Section 9  — <script> (all JS inline)
+
+db-test.php          # Visual utility to inspect database status, tables, and rows
 ```
  
 ---
@@ -238,15 +251,40 @@ index.php
 | `courses-view` | Course Catalog + Filters |
 | `course-detail-view` | Course Detail Page |
 | `cart-view` | Shopping Cart |
-| `payment-view` | Payment Gateway |
-| `student-dashboard-view` | Student Dashboard |
-| `course-player-view` | Course Player + Notes |
-| `instructor-dashboard-view` | Instructor Portal |
-| `settings-view` | Account Settings |
-| `wishlist-view` | Wishlist |
-| `admin-view` | Admin Panel |
-| `certificate-view` | Certificate Modal |
+| `checkout-view` | Secure Payment Checkout Room |
+| `success-view` | Secure Transaction Success Page |
+| `dashboard-view` | Student Classroom Dashboard |
+| `player-view` | Course Outline Video Player |
+| `instructor-view` | Instructor Portal Dashboard |
+| `profile-view` | Personal Settings |
+| `wishlist-view` | Bookmarks Wishlist |
+| `admin-view` | Global Operations Panel |
  
+---
+
+## 🛠️ Recent Platform Enhancements (v2.2)
+
+We have recently upgraded the platform with several modern features, bug fixes, and layout alignments to create an elite user experience:
+
+### 1. Standalone Database Explorer (`db-test.php`)
+A custom, beautifully styled web-based PostgreSQL browser. Visit `http://localhost/klean/db-test.php` in your browser to:
+- Test and debug local PostgreSQL connection parameters.
+- View auto-generated tables, column structures, and data types.
+- Preview live table rows (up to 50 results) using a responsive, fluid design system.
+
+### 2. Upgraded Payment Room
+A fully featured multi-channel checkout room supporting:
+- **Debit/Credit Card:** Auto-formats 16-digit card inputs with spaces and expiry dates with slashes. Features a visual debit card mockup that matches user input in real-time and automatically detects card brands (Visa/Mastercard).
+- **UPI (Unified Payments Interface):** Dynamically formatted scan-to-pay QR code layout with quick selectors for GPay, PhonePe, and Paytm.
+- **Digital Wallets:** Active state style mapping for Paytm, PhonePe, and Amazon Pay.
+- **Cash / Offline Checkout:** Fully simulated bypass module allowing immediate course enrollment for quick sandbox testing.
+
+### 3. Layout Alignments & Visual Fixes
+- **Navbar Stretch:** Modified the navbar container from centered to fluid (`container-fluid px-4 px-lg-5`) so that the brand logo aligns perfectly with the sidebar and the profile aligns with the right margins.
+- **Sidebar Header Spacing:** Added dedicated vertical spacing and alignment rules for `.sidebar-logo` to prevent squished layouts.
+- **Progress Bar Customization:** Enabled visible, premium HSL purple progress bars (`.progress-bar-custom`) on student classrooms tracking cards.
+- **Self-Healing Session Check:** Added an active user verification check to the session lifecycle. If the database is reset or reseeded, the system automatically redirects the browser to a clean logout rather than crashing with foreign key constraint violations.
+
 ---
  
 ## ⚠️ Common Errors & Fixes
