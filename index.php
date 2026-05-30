@@ -7,7 +7,7 @@
 define('DB_HOST', 'localhost');
 define('DB_PORT', '5432');
 define('DB_USER', 'postgres');
-define('DB_PASS', '');
+define('DB_PASS', 'postgres123');
 define('DB_NAME', 'klean_db');
 
 try {
@@ -422,6 +422,19 @@ try {
 // =========================================================================
 session_start();
 
+// Sanity check: if a user is logged in, verify they still exist in the database
+if (isset($_SESSION['user']) && isset($pdo)) {
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user']['id']]);
+    if (!$stmt->fetch()) {
+        $_SESSION = [];
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+        session_start();
+    }
+}
+
 // CSRF Token Setup
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -513,7 +526,16 @@ if (isset($_GET['ajax'])) {
     
     // Validate CSRF for POST actions
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $token = $_POST['csrf_token'] ?? '';
+        $headers = getallheaders();
+        $token = $_POST['csrf_token'] ?? $headers['X-CSRF-Token'] ?? $headers['x-csrf-token'] ?? '';
+        
+        if (empty($token)) {
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!empty($input['csrf_token'])) {
+                $token = $input['csrf_token'];
+            }
+        }
+        
         if (empty($token) || $token !== ($_SESSION['csrf_token'] ?? '')) {
             echo json_encode(['success' => false, 'error' => 'Security Error: CSRF validation failed.']);
             exit;
@@ -2646,61 +2668,140 @@ if (!in_array($page, $allowedPages)) {
               
               <!-- Tabs -->
               <div class="row g-2 text-center mb-4">
-                <div class="col-4">
-                  <div class="p-3 border rounded-3 pay-tab active" data-target="panel-card" style="cursor:pointer;"><i class="bi bi-credit-card fs-4 d-block mb-1"></i><span class="small fw-600">Credit Card</span></div>
+                <div class="col-3 col-md-3">
+                  <div class="p-3 border rounded-3 pay-tab active" data-target="panel-card" style="cursor:pointer;"><i class="bi bi-credit-card fs-4 d-block mb-1"></i><span class="small fw-600" style="font-size:0.75rem;">Card</span></div>
                 </div>
-                <div class="col-4">
-                  <div class="p-3 border rounded-3 pay-tab" data-target="panel-upi" style="cursor:pointer;"><i class="bi bi-qr-code fs-4 d-block mb-1"></i><span class="small fw-600">UPI Payments</span></div>
+                <div class="col-3 col-md-3">
+                  <div class="p-3 border rounded-3 pay-tab" data-target="panel-upi" style="cursor:pointer;"><i class="bi bi-qr-code fs-4 d-block mb-1"></i><span class="small fw-600" style="font-size:0.75rem;">UPI</span></div>
                 </div>
-                <div class="col-4">
-                  <div class="p-3 border rounded-3 pay-tab" data-target="panel-wallet" style="cursor:pointer;"><i class="bi bi-wallet2 fs-4 d-block mb-1"></i><span class="small fw-600">Wallet</span></div>
+                <div class="col-3 col-md-3">
+                  <div class="p-3 border rounded-3 pay-tab" data-target="panel-wallet" style="cursor:pointer;"><i class="bi bi-wallet2 fs-4 d-block mb-1"></i><span class="small fw-600" style="font-size:0.75rem;">Wallet</span></div>
+                </div>
+                <div class="col-3 col-md-3">
+                  <div class="p-3 border rounded-3 pay-tab" data-target="panel-cash" style="cursor:pointer;"><i class="bi bi-cash-coin fs-4 d-block mb-1"></i><span class="small fw-600" style="font-size:0.75rem;">Cash</span></div>
                 </div>
               </div>
 
               <!-- Panels -->
+              <!-- CARD PANEL -->
               <div class="pay-panel" id="panel-card">
                 <form onsubmit="submitPayment(event)">
+                  <!-- Virtual Card Display Mockup -->
+                  <div class="rounded-4 p-4 mb-4 text-white position-relative shadow" style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); height: 180px; overflow:hidden;">
+                    <div class="position-absolute end-0 top-0 m-3 opacity-20"><i class="bi bi-wifi fs-2"></i></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <span class="fw-700 tracking-wide small" style="font-size:0.75rem;">SECURE DEBIT CARD</span>
+                      <span class="fw-800" id="card-type-display" style="font-size:0.85rem;">VISA</span>
+                    </div>
+                    <div class="fs-4 fw-600 mb-3 tracking-widest" id="card-number-display" style="font-family: monospace;">•••• •••• •••• ••••</div>
+                    <div class="row align-items-end mt-4">
+                      <div class="col-8">
+                        <small class="text-white-50 d-block" style="font-size: 0.65rem;">CARDHOLDER</small>
+                        <span class="fw-600 text-uppercase text-truncate d-block" id="card-name-display" style="max-width:180px; font-size: 0.85rem;">YOUR NAME</span>
+                      </div>
+                      <div class="col-4 text-end">
+                        <small class="text-white-50 d-block" style="font-size: 0.65rem;">EXPIRES</small>
+                        <span class="fw-600" id="card-expiry-display" style="font-size: 0.85rem;">MM/YY</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="mb-3">
                     <label class="form-label text-muted small fw-600 mb-1">CARDHOLDER NAME</label>
-                    <input type="text" class="form-control rounded-3" placeholder="Alex Johnson" required>
+                    <input type="text" class="form-control rounded-3" id="cc-name-input" placeholder="Alex Johnson" oninput="updateCardDisplay('name', this)" required>
                   </div>
                   <div class="mb-3">
                     <label class="form-label text-muted small fw-600 mb-1">CARD NUMBER</label>
-                    <input type="text" class="form-control rounded-3" placeholder="4111 2222 3333 4444" minlength="16" maxlength="16" required>
+                    <input type="text" class="form-control rounded-3" id="cc-number-input" placeholder="4111 2222 3333 4444" maxlength="19" oninput="updateCardDisplay('number', this)" required>
                   </div>
                   <div class="row g-3 mb-4">
                     <div class="col-6">
                       <label class="form-label text-muted small fw-600 mb-1">EXPIRY DATE</label>
-                      <input type="text" class="form-control rounded-3" placeholder="MM/YY" maxlength="5" required>
+                      <input type="text" class="form-control rounded-3" id="cc-expiry-input" placeholder="MM/YY" maxlength="5" oninput="updateCardDisplay('expiry', this)" required>
                     </div>
                     <div class="col-6">
                       <label class="form-label text-muted small fw-600 mb-1">CVV CODE</label>
                       <input type="password" class="form-control rounded-3" placeholder="***" minlength="3" maxlength="3" required>
                     </div>
                   </div>
-                  <button type="submit" class="btn btn-primary-klean w-100 py-3 rounded-3 fw-700" id="pay-btn">Pay <span id="checkout-pay-total">₹0.00</span> Now</button>
+                  <button type="submit" class="btn btn-primary-klean w-100 py-3 rounded-3 fw-700">Pay <span class="checkout-pay-total">₹0.00</span> Now</button>
                 </form>
               </div>
 
+              <!-- UPI PANEL -->
               <div class="pay-panel d-none" id="panel-upi">
                 <div class="text-center py-4">
-                  <i class="bi bi-qr-code text-primary" style="font-size: 5rem;"></i>
-                  <h6 class="fw-700 mt-3 mb-2">Scan QR Code or Enter UPI ID</h6>
-                  <p class="text-muted small mb-4">You will receive a notification in your UPI application to authorize.</p>
+                  <div class="mb-4">
+                    <div class="d-inline-flex p-3 bg-light border border-primary border-opacity-10 rounded-4">
+                      <!-- Render QR Code with dynamic price inside -->
+                      <div class="p-3 bg-white rounded-3 shadow-sm border border-2 border-primary position-relative" style="width: 140px; height: 140px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-qr-code text-dark" style="font-size: 6rem; line-height: 1;"></i>
+                        <span class="badge bg-primary position-absolute top-100 start-50 translate-middle shadow" style="font-size: 0.65rem;">SCAN & PAY</span>
+                      </div>
+                    </div>
+                  </div>
+                  <h6 class="fw-700 mt-2 mb-1">Scan UPI QR Code</h6>
+                  <p class="text-muted small mb-4">Scan using Google Pay, PhonePe, Paytm, or BHIM UPI app.</p>
+                  
+                  <div class="d-flex justify-content-center gap-2 mb-4">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-pill py-2" onclick="selectUpiApp('gpay')"><i class="bi bi-google me-1"></i> GPay</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-pill py-2" onclick="selectUpiApp('phonepe')"><i class="bi bi-wallet2 me-1"></i> PhonePe</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-pill py-2" onclick="selectUpiApp('paytm')"><i class="bi bi-phone-fill me-1"></i> Paytm</button>
+                  </div>
+
                   <form onsubmit="submitPayment(event)">
-                    <div class="input-group mb-4 mx-auto" style="max-width:360px;">
-                      <input type="text" class="form-control rounded-start-3" placeholder="username@upi" required>
-                      <button type="submit" class="btn btn-primary-klean rounded-end-3 py-2">Pay Now</button>
+                    <div class="input-group mb-4 mx-auto" style="max-width:380px;">
+                      <span class="input-group-text bg-light text-muted small fw-600"><i class="bi bi-qr-code-scan"></i></span>
+                      <input type="text" class="form-control" id="upi-id-input" placeholder="username@upi" required>
+                      <button type="submit" class="btn btn-primary-klean py-2 px-3 rounded-end-3 ms-0">Pay <span class="checkout-pay-total">₹0.00</span></button>
                     </div>
                   </form>
                 </div>
               </div>
 
+              <!-- WALLET PANEL -->
               <div class="pay-panel d-none" id="panel-wallet">
                 <div class="text-center py-4">
-                  <i class="bi bi-wallet2 text-success" style="font-size: 4rem;"></i>
-                  <h6 class="fw-700 mt-3 mb-4">Pay using Paytm, PhonePe, or Amazon Pay Wallet</h6>
-                  <button class="btn btn-primary-klean py-3 px-5 rounded-3 fw-700" onclick="submitPayment(event)">Authenticate and Pay</button>
+                  <i class="bi bi-wallet2 text-success" style="font-size: 4.5rem;"></i>
+                  <h6 class="fw-700 mt-3 mb-2">Simulated Digital Wallet Checkout</h6>
+                  <p class="text-muted small mb-4">Pay instantly using your saved Paytm, PhonePe, or Amazon Pay balance.</p>
+                  
+                  <div class="row g-2 mx-auto mb-4" style="max-width:440px;">
+                    <div class="col-4">
+                      <div class="p-3 border rounded-3 wallet-select active" id="w-paytm" onclick="selectWallet('paytm', this)" style="cursor:pointer;">
+                        <i class="bi bi-wallet2 fs-5 d-block mb-1 text-primary"></i>
+                        <span class="small fw-700" style="font-size:0.75rem;">Paytm</span>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="p-3 border rounded-3 wallet-select" id="w-phonepe" onclick="selectWallet('phonepe', this)" style="cursor:pointer;">
+                        <i class="bi bi-phone-vibrate fs-5 d-block mb-1 text-secondary"></i>
+                        <span class="small fw-700" style="font-size:0.75rem;">PhonePe</span>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="p-3 border rounded-3" id="w-amazon" onclick="selectWallet('amazon', this)" style="cursor:pointer; border: 1px solid var(--border);">
+                        <i class="bi bi-amazon fs-5 d-block mb-1 text-warning"></i>
+                        <span class="small fw-700" style="font-size:0.75rem;">Amazon Pay</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button class="btn btn-primary-klean py-3 px-5 rounded-3 fw-700" onclick="submitPayment(event)">Authenticate and Pay <span class="checkout-pay-total">₹0.00</span></button>
+                </div>
+              </div>
+
+              <!-- CASH / OFFLINE PANEL -->
+              <div class="pay-panel d-none" id="panel-cash">
+                <div class="text-center py-4">
+                  <i class="bi bi-cash-coin text-success" style="font-size: 4.5rem;"></i>
+                  <h6 class="fw-700 mt-3 mb-2">Simulate Cash / Pay-on-Counter Payment</h6>
+                  <p class="text-muted small mb-4" style="max-width:500px; margin: 0 auto 1.5rem;">
+                    This option simulates an offline Cash on Counter transaction. Selecting this will bypass payment gateway authorization, immediately enrolling your account for quick local testing.
+                  </p>
+                  <button class="btn btn-success py-3 px-5 rounded-3 fw-700 text-white" onclick="submitPayment(event)" style="background-color: var(--success); border-color: var(--success);">
+                    <i class="bi bi-check-circle me-1"></i> Complete Cash Payment <span class="checkout-pay-total">₹0.00</span>
+                  </button>
                 </div>
               </div>
 
@@ -4079,10 +4180,86 @@ if (!in_array($page, $allowedPages)) {
     }
 
     // =========================================================================
-    // 6. PAYMENT CHECKOUT SUMMARY
+    // 6. PAYMENT CHECKOUT SUMMARY & SIMULATION DRIVERS
     // =========================================================================
     function renderCheckoutSummary() {
-      document.getElementById("checkout-pay-total").textContent = `₹${finalOrderTotal.toFixed(2)}`;
+      document.querySelectorAll(".checkout-pay-total").forEach(el => {
+        el.textContent = `₹${finalOrderTotal.toFixed(2)}`;
+      });
+      
+      // Reset virtual card display to defaults
+      document.getElementById("cc-name-input").value = "";
+      document.getElementById("cc-number-input").value = "";
+      document.getElementById("cc-expiry-input").value = "";
+      document.getElementById("card-name-display").textContent = "YOUR NAME";
+      document.getElementById("card-number-display").textContent = "•••• •••• •••• ••••";
+      document.getElementById("card-expiry-display").textContent = "MM/YY";
+      document.getElementById("card-type-display").textContent = "DEBIT CARD";
+      
+      // Reset UPI inputs
+      document.getElementById("upi-id-input").value = "";
+      
+      // Reset wallet styling
+      document.querySelectorAll(".wallet-select").forEach(el => {
+        el.classList.remove("active");
+        el.style.border = "1px solid var(--border)";
+      });
+      document.getElementById("w-paytm").classList.add("active");
+      document.getElementById("w-paytm").style.border = "2px solid var(--primary)";
+    }
+
+    function updateCardDisplay(field, input) {
+      if (field === 'name') {
+        const val = input.value.trim();
+        document.getElementById("card-name-display").textContent = val ? val.toUpperCase() : "YOUR NAME";
+      } else if (field === 'number') {
+        // Auto-space card number formatting (every 4 digits)
+        let val = input.value.replace(/\D/g, '');
+        let formatted = '';
+        for (let i = 0; i < val.length; i++) {
+          if (i && i % 4 === 0) formatted += ' ';
+          formatted += val[i];
+        }
+        input.value = formatted;
+        document.getElementById("card-number-display").textContent = formatted ? formatted : "•••• •••• •••• ••••";
+        
+        // Detect card type (e.g., 4 starts Visa, 5 starts Mastercard)
+        const type = document.getElementById("card-type-display");
+        if (val.startsWith('4')) {
+          type.textContent = "VISA";
+          type.style.color = "#FFF";
+        } else if (val.startsWith('5')) {
+          type.textContent = "MASTERCARD";
+          type.style.color = "#FFB020";
+        } else {
+          type.textContent = "DEBIT CARD";
+          type.style.color = "#FFF";
+        }
+      } else if (field === 'expiry') {
+        // Auto-slash expiry formatting (MM/YY)
+        let val = input.value.replace(/\D/g, '');
+        if (val.length > 2) {
+          input.value = val.slice(0, 2) + '/' + val.slice(2, 4);
+        } else {
+          input.value = val;
+        }
+        document.getElementById("card-expiry-display").textContent = input.value ? input.value : "MM/YY";
+      }
+    }
+
+    function selectUpiApp(app) {
+      document.getElementById("upi-id-input").value = `alex@${app}`;
+      showToast(`${app.toUpperCase()} UPI app selected!`, 'success');
+    }
+
+    function selectWallet(wallet, element) {
+      document.querySelectorAll(".wallet-select").forEach(el => {
+        el.classList.remove("active");
+        el.style.border = "1px solid var(--border)";
+      });
+      element.classList.add("active");
+      element.style.border = "2px solid var(--primary)";
+      showToast(`${wallet.toUpperCase()} Wallet balance selected!`, 'success');
     }
 
     function submitPayment(e) {

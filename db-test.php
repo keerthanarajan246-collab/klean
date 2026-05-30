@@ -13,7 +13,7 @@
 $db_host = 'localhost';
 $db_port = '5432';
 $db_user = 'postgres';
-$db_pass = ''; // Set your PostgreSQL password here if configured
+$db_pass = 'postgres123'; // Set your PostgreSQL password here if configured
 $db_name = 'klean_db';
 
 $conn_error = null;
