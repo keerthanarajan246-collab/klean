@@ -9,14 +9,14 @@ use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 // SMTP Mailer Configuration
-define('MAIL_SMTP_HOST', 'smtp.mailtrap.io'); // Change to your SMTP server host
-define('MAIL_SMTP_PORT', 2525);              // Change to your SMTP port (e.g. 587 for TLS, 465 for SSL)
-define('MAIL_SMTP_USER', 'your_username');    // Change to your SMTP username
-define('MAIL_SMTP_PASS', 'your_password');    // Change to your SMTP password
+define('MAIL_SMTP_HOST', 'smtp.gmail.com'); // Change to your SMTP server host
+define('MAIL_SMTP_PORT', 587);              // Change to your SMTP port (e.g. 587 for TLS, 465 for SSL)
+define('MAIL_SMTP_USER', 'keerthanarajan246@gmail.com');    // Change to your SMTP username
+define('MAIL_SMTP_PASS', 'xsgt ugxx zpjh nftk');    // Change to your SMTP password
 define('MAIL_SMTP_SECURE', 'tls');           // 'tls' or 'ssl'
 define('MAIL_FROM_EMAIL', 'support@klean.com');
 define('MAIL_FROM_NAME', 'Klean Support Desk');
-define('ADMIN_NOTIFICATION_EMAIL', 'admin@klean.com'); // Admin email to receive ticket alerts
+define('ADMIN_NOTIFICATION_EMAIL', 'keerthanarajan246@gmail.com'); // Admin email to receive ticket alerts
 
 // Attempt to load PHPMailer
 $phpmailer_loaded = false;
