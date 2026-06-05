@@ -3141,35 +3141,61 @@ if (!in_array($page, $allowedPages)) {
         <div class="dashboard-main">
           <h2 class="fw-800 text-dark mb-4">Global Operations Panel</h2>
           
-          <!-- Mock stats -->
+          <?php
+          try {
+              $admin_users_count = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+              $admin_platform_gross = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payment_status = 'success'")->fetchColumn();
+              $admin_courses_count = (int)$pdo->query("SELECT COUNT(*) FROM courses")->fetchColumn();
+              
+              // Total database records that count as transactional operations
+              $admin_transactions_count = (int)$pdo->query("SELECT 
+                  (SELECT COUNT(*) FROM payments) + 
+                  (SELECT COUNT(*) FROM reviews) + 
+                  (SELECT COUNT(*) FROM notes) +
+                  (SELECT COUNT(*) FROM certificates) +
+                  (SELECT COUNT(*) FROM ticket_replies) +
+                  (SELECT COUNT(*) FROM export_logs)
+              ")->fetchColumn();
+              
+              $admin_registrants = $pdo->query("SELECT name, email, role, is_active FROM users ORDER BY created_at DESC")->fetchAll();
+          } catch (Exception $e) {
+              $admin_users_count = 0;
+              $admin_platform_gross = 0;
+              $admin_courses_count = 0;
+              $admin_transactions_count = 0;
+              $admin_registrants = [];
+          }
+          ?>
+
+          <!-- Stats Grid -->
           <div class="row g-4 mb-5">
             <div class="col-md-3">
               <div class="p-4 bg-white border rounded-4 text-center shadow-sm">
-                <h1 class="fw-800 text-primary mb-1">512</h1>
+                <h1 class="fw-800 text-primary mb-1"><?= number_format($admin_users_count) ?></h1>
                 <span class="text-muted small fw-600">TOTAL SYSTEM USERS</span>
               </div>
             </div>
             <div class="col-md-3">
               <div class="p-4 bg-white border rounded-4 text-center shadow-sm">
-                <h1 class="fw-800 text-success mb-1">₹89,200</h1>
+                <h1 class="fw-800 text-success mb-1">₹<?= number_format($admin_platform_gross) ?></h1>
                 <span class="text-muted small fw-600">TOTAL PLATFORM GROSS</span>
               </div>
             </div>
             <div class="col-md-3">
               <div class="p-4 bg-white border rounded-4 text-center shadow-sm">
-                <h1 class="fw-800 text-warning mb-1">82</h1>
+                <h1 class="fw-800 text-warning mb-1"><?= number_format($admin_courses_count) ?></h1>
                 <span class="text-muted small fw-600">PUBLISHED COURSES</span>
               </div>
             </div>
             <div class="col-md-3">
               <div class="p-4 bg-white border rounded-4 text-center shadow-sm">
-                <h1 class="fw-800 text-danger mb-1">1,240</h1>
+                <h1 class="fw-800 text-danger mb-1"><?= number_format($admin_transactions_count) ?></h1>
                 <span class="text-muted small fw-600">DB TRANSACTIONS</span>
               </div>
             </div>
           </div>
 
-          <!-- Mock tables -->
+          <!-- Dynamic Registrants Table -->
           <h5 class="fw-800 mb-3 text-dark">Active System Registrants</h5>
           <div class="card border rounded-4 bg-white shadow-sm overflow-hidden mb-4">
             <div class="table-responsive">
@@ -3183,9 +3209,27 @@ if (!in_array($page, $allowedPages)) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Admin User</td><td>admin@klean.com</td><td><span class="badge bg-danger">ADMIN</span></td><td><span class="badge bg-success">ACTIVE</span></td></tr>
-                  <tr><td>Sarah Williams</td><td>sarah@klean.com</td><td><span class="badge bg-warning text-dark">INSTRUCTOR</span></td><td><span class="badge bg-success">ACTIVE</span></td></tr>
-                  <tr><td>Alex Johnson</td><td>alex@klean.com</td><td><span class="badge bg-primary">STUDENT</span></td><td><span class="badge bg-success">ACTIVE</span></td></tr>
+                  <?php if (empty($admin_registrants)): ?>
+                    <tr><td colspan="4" class="text-center py-4 text-muted">No registrants found in database.</td></tr>
+                  <?php else: ?>
+                    <?php foreach ($admin_registrants as $reg): 
+                      $roleBadge = '<span class="badge bg-primary">STUDENT</span>';
+                      if ($reg['role'] === 'admin') {
+                          $roleBadge = '<span class="badge bg-danger">ADMIN</span>';
+                      } elseif ($reg['role'] === 'instructor') {
+                          $roleBadge = '<span class="badge bg-warning text-dark">INSTRUCTOR</span>';
+                      }
+                      
+                      $statusBadge = ((int)$reg['is_active'] === 1) ? '<span class="badge bg-success">ACTIVE</span>' : '<span class="badge bg-secondary">INACTIVE</span>';
+                    ?>
+                      <tr>
+                        <td class="fw-600 text-dark"><?= htmlspecialchars($reg['name']) ?></td>
+                        <td><?= htmlspecialchars($reg['email']) ?></td>
+                        <td><?= $roleBadge ?></td>
+                        <td><?= $statusBadge ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
                 </tbody>
               </table>
             </div>
