@@ -279,6 +279,41 @@ try {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );");
 
+    // 17. Tickets
+    $pdo->exec("CREATE TABLE IF NOT EXISTS tickets (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      subject VARCHAR(255) NOT NULL,
+      category VARCHAR(100) NOT NULL,
+      priority VARCHAR(20) DEFAULT 'Medium',
+      message TEXT NOT NULL,
+      status VARCHAR(30) DEFAULT 'Open',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_ticket_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );");
+
+    // 18. Ticket Replies
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ticket_replies (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL,
+      user_id INTEGER,
+      admin_id INTEGER,
+      reply_message TEXT NOT NULL,
+      is_internal BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_reply_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+    );");
+
+    // 19. Ticket Activity Logs
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ticket_activity_logs (
+      id SERIAL PRIMARY KEY,
+      ticket_id INTEGER NOT NULL,
+      activity TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_log_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+    );");
+
 } catch (PDOException $e) {
     die("Database Schema Error: " . $e->getMessage());
 }
@@ -407,7 +442,7 @@ try {
         'users', 'categories', 'courses', 'sections', 'lessons', 
         'enrollments', 'progress', 'cart', 'wishlist', 'payments', 
         'payment_items', 'reviews', 'coupons', 'certificates', 
-        'notes', 'notifications'
+        'notes', 'notifications', 'tickets', 'ticket_replies', 'ticket_activity_logs'
     ];
     foreach ($seeded_tables as $tbl) {
         $pdo->exec("SELECT setval('{$tbl}_id_seq', COALESCE((SELECT MAX(id) FROM {$tbl}), 0) + 1, false)");
@@ -1403,6 +1438,10 @@ if (isset($_GET['ajax'])) {
         echo json_encode(['success' => false, 'error' => 'Server Error: ' . $ex->getMessage()]);
     }
     exit;
+}
+
+if (defined('KLEAN_NO_RENDER') && KLEAN_NO_RENDER) {
+    return;
 }
 
 // =========================================================================
@@ -2863,6 +2902,7 @@ if (!in_array($page, $allowedPages)) {
           <a class="nav-link-klean active" href="#" onclick="switchView('dashboard-view');return false;"><i class="bi bi-speedometer2"></i> Classroom Stats</a>
           <a class="nav-link-klean" href="#" onclick="switchView('wishlist-view');return false;"><i class="bi bi-heart"></i> Bookmarks</a>
           <a class="nav-link-klean" href="#" onclick="switchView('profile-view');return false;"><i class="bi bi-gear"></i> Settings</a>
+          <a class="nav-link-klean" href="student/support/my-tickets.php"><i class="bi bi-ticket-detailed"></i> Support Tickets</a>
         </div>
         
         <!-- Main Panel -->
@@ -3084,6 +3124,7 @@ if (!in_array($page, $allowedPages)) {
           </div>
           <a class="nav-link-klean active" href="#" onclick="switchView('admin-view');return false;"><i class="bi bi-speedometer2"></i> Global Analytics</a>
           <a class="nav-link-klean" href="#" onclick="switchView('profile-view');return false;"><i class="bi bi-gear"></i> Settings</a>
+          <a class="nav-link-klean" href="admin/support/tickets.php"><i class="bi bi-ticket-detailed"></i> Support Management</a>
         </div>
         
         <!-- Main Panel -->
