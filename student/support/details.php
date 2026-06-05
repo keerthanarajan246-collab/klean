@@ -4,8 +4,8 @@
  * Shows conversation details, timeline, and handles student replies
  */
 
-require_once __DIR__ . '/../../includes/ticket-functions.php';
-require_once __DIR__ . '/../../includes/mailer.php';
+require_once __DIR__ . '/../../includes/support-helpers.php';
+require_once __DIR__ . '/../../includes/email-service.php';
 
 // Verify student role
 if ($_SESSION['user']['role'] !== 'student') {
@@ -17,7 +17,7 @@ $userId = $_SESSION['user']['id'];
 $ticketId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($ticketId <= 0) {
-    header('Location: my-tickets.php');
+    header('Location: index.php');
     exit;
 }
 
@@ -32,7 +32,7 @@ try {
     
     if (!$ticket) {
         // Ticket not found or not owned by user
-        header('Location: my-tickets.php');
+        header('Location: index.php');
         exit;
     }
 } catch (PDOException $e) {
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ";
             dispatchEmail($adminEmail, $emailSubject, $emailBody);
             
-            header("Location: ticket-details.php?id={$ticketId}&replied=1");
+            header("Location: details.php?id={$ticketId}&replied=1");
             exit;
             
         } catch (PDOException $e) {
@@ -130,7 +130,7 @@ renderTicketHeader("Support Ticket #{$ticketId}");
   <!-- Main Panel -->
   <div class="dashboard-main">
     <div class="mb-4">
-      <a href="my-tickets.php" class="text-primary text-decoration-none small fw-600">
+      <a href="index.php" class="text-primary text-decoration-none small fw-600">
         <i class="bi bi-arrow-left me-2"></i>Back to My Tickets
       </a>
       <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
@@ -228,7 +228,7 @@ renderTicketHeader("Support Ticket #{$ticketId}");
               <div class="alert alert-danger rounded-3 small mb-3"><?= htmlspecialchars($errors['reply']) ?></div>
             <?php endif; ?>
 
-            <form action="ticket-details.php?id=<?= $ticketId ?>" method="POST">
+            <form action="details.php?id=<?= $ticketId ?>" method="POST">
               <!-- CSRF -->
               <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
               

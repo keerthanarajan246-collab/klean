@@ -4,7 +4,7 @@
  * Panel for administrators to view, search, and filter student tickets
  */
 
-require_once __DIR__ . '/../../includes/ticket-functions.php';
+require_once __DIR__ . '/../../includes/support-helpers.php';
 
 // Verify admin role
 if ($_SESSION['user']['role'] !== 'admin') {
@@ -127,7 +127,7 @@ renderTicketHeader("Support Ticket Management");
     <!-- Filters and Search panel -->
     <div class="card p-4 border rounded-4 bg-white shadow-sm mb-4">
       <h6 class="fw-800 text-dark mb-3"><i class="bi bi-funnel-fill text-muted me-2"></i>Filter & Search Tickets</h6>
-      <form action="tickets.php" method="GET" class="row g-3">
+      <form action="index.php" method="GET" class="row g-3">
         
         <!-- Search query -->
         <div class="col-md-3">
@@ -186,7 +186,7 @@ renderTicketHeader("Support Ticket Management");
         </div>
 
         <div class="col-12 d-flex justify-content-end gap-2 border-top pt-3">
-          <a href="tickets.php" class="btn btn-outline-klean btn-sm">Clear Filters</a>
+          <a href="index.php" class="btn btn-outline-klean btn-sm">Clear Filters</a>
           <button type="submit" class="btn btn-primary-klean btn-sm px-4">Apply Filters</button>
         </div>
       </form>
@@ -246,7 +246,7 @@ renderTicketHeader("Support Ticket Management");
                     <?= date('M d, Y H:i', strtotime($t['created_at'])) ?>
                   </td>
                   <td class="py-3 text-end">
-                    <a href="ticket-details.php?id=<?= $t['id'] ?>" class="btn btn-outline-klean btn-sm py-1 px-3">
+                    <a href="details.php?id=<?= $t['id'] ?>" class="btn btn-outline-klean btn-sm py-1 px-3">
                       Manage Ticket
                     </a>
                   </td>

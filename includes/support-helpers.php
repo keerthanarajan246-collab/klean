@@ -33,6 +33,18 @@ function logTicketActivity($pdo, $ticketId, $activity) {
 }
 
 /**
+ * Log export audit log entry
+ */
+function logExportAudit($pdo, $adminId, $exportType) {
+    try {
+        $stmt = $pdo->prepare("INSERT INTO export_logs (admin_id, export_type) VALUES (?, ?)");
+        return $stmt->execute([$adminId, $exportType]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
  * Validate CSRF Token
  */
 function validateTicketCSRF() {
@@ -264,7 +276,8 @@ function renderTicketSidebar($role, $activeItem) {
       </div>
       <a class="nav-link-klean" href="../../index.php?page=admin"><i class="bi bi-speedometer2"></i> Global Analytics</a>
       <a class="nav-link-klean" href="../../index.php?page=profile"><i class="bi bi-gear"></i> Settings</a>
-      <a class="nav-link-klean <?= ($activeItem === 'support') ? 'active' : '' ?>" href="tickets.php"><i class="bi bi-ticket-detailed"></i> Support Management</a>
+      <a class="nav-link-klean <?= ($activeItem === 'support') ? 'active' : '' ?>" href="../../admin/support/index.php"><i class="bi bi-ticket-detailed"></i> Support Management</a>
+      <a class="nav-link-klean <?= ($activeItem === 'reports') ? 'active' : '' ?>" href="../../admin/reports/index.php"><i class="bi bi-graph-up"></i> Reports & Exports</a>
     </div>
     <?php
     else: // Student
@@ -277,7 +290,7 @@ function renderTicketSidebar($role, $activeItem) {
       <a class="nav-link-klean" href="../../index.php?page=dashboard"><i class="bi bi-speedometer2"></i> Classroom Stats</a>
       <a class="nav-link-klean" href="../../index.php?page=wishlist"><i class="bi bi-heart"></i> Bookmarks</a>
       <a class="nav-link-klean" href="../../index.php?page=profile"><i class="bi bi-gear"></i> Settings</a>
-      <a class="nav-link-klean <?= ($activeItem === 'support') ? 'active' : '' ?>" href="my-tickets.php"><i class="bi bi-ticket-detailed"></i> Support Tickets</a>
+      <a class="nav-link-klean <?= ($activeItem === 'support') ? 'active' : '' ?>" href="../../student/support/index.php"><i class="bi bi-ticket-detailed"></i> Support Tickets</a>
     </div>
     <?php
     endif;

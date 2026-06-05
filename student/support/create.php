@@ -4,8 +4,8 @@
  * Form for students to open a support ticket
  */
 
-require_once __DIR__ . '/../../includes/ticket-functions.php';
-require_once __DIR__ . '/../../includes/mailer.php';
+require_once __DIR__ . '/../../includes/support-helpers.php';
+require_once __DIR__ . '/../../includes/email-service.php';
 
 // Verify student role
 if ($_SESSION['user']['role'] !== 'student') {
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sendTicketNotification($ticketId, $userName, $userEmail, $subject, $priority, $category, $message);
             
             // Redirect to list with success toast flag
-            header('Location: my-tickets.php?created=1');
+            header('Location: index.php?created=1');
             exit;
             
         } catch (PDOException $e) {
@@ -94,7 +94,7 @@ renderTicketHeader("Create Support Ticket");
   <!-- Main Panel -->
   <div class="dashboard-main">
     <div class="mb-4">
-      <a href="my-tickets.php" class="text-primary text-decoration-none small fw-600">
+      <a href="index.php" class="text-primary text-decoration-none small fw-600">
         <i class="bi bi-arrow-left me-2"></i>Back to My Tickets
       </a>
       <h2 class="fw-800 text-dark mt-2">Open Support Ticket</h2>
@@ -111,7 +111,7 @@ renderTicketHeader("Create Support Ticket");
             </div>
           <?php endif; ?>
 
-          <form action="create-ticket.php" method="POST">
+          <form action="create.php" method="POST">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 
@@ -170,7 +170,7 @@ renderTicketHeader("Create Support Ticket");
               <button type="submit" class="btn btn-primary-klean">
                 <i class="bi bi-send-fill me-2"></i>Submit Support Ticket
               </button>
-              <a href="my-tickets.php" class="btn btn-outline-klean">
+              <a href="index.php" class="btn btn-outline-klean">
                 Cancel
               </a>
             </div>

@@ -4,7 +4,7 @@
  * Displays all support tickets created by the logged-in student
  */
 
-require_once __DIR__ . '/../../includes/ticket-functions.php';
+require_once __DIR__ . '/../../includes/support-helpers.php';
 
 // Verify student role
 if ($_SESSION['user']['role'] !== 'student') {
@@ -38,7 +38,7 @@ renderTicketHeader("My Support Tickets");
         <h2 class="fw-800 text-dark m-0">Support Tickets</h2>
         <p class="text-muted small mb-0">Need help? Create a support ticket and our team will get right back to you.</p>
       </div>
-      <a href="create-ticket.php" class="btn btn-primary-klean">
+      <a href="create.php" class="btn btn-primary-klean">
         <i class="bi bi-plus-circle me-2"></i>Create New Ticket
       </a>
     </div>
@@ -52,7 +52,7 @@ renderTicketHeader("My Support Tickets");
           </div>
           <h5 class="fw-700 text-dark">No Tickets Opened Yet</h5>
           <p class="text-muted small mb-4">You do not have any active support requests. If you are facing any issues, let us know!</p>
-          <a href="create-ticket.php" class="btn btn-outline-klean btn-sm">
+          <a href="create.php" class="btn btn-outline-klean btn-sm">
             Open Your First Ticket
           </a>
         </div>
@@ -98,7 +98,7 @@ renderTicketHeader("My Support Tickets");
                     <?= date('M d, Y H:i', strtotime($t['created_at'])) ?>
                   </td>
                   <td class="py-3 text-end">
-                    <a href="ticket-details.php?id=<?= $t['id'] ?>" class="btn btn-outline-klean btn-sm py-1 px-3">
+                    <a href="details.php?id=<?= $t['id'] ?>" class="btn btn-outline-klean btn-sm py-1 px-3">
                       View Conversation
                     </a>
                   </td>

@@ -314,6 +314,15 @@ try {
       CONSTRAINT fk_log_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
     );");
 
+    // 20. Export Audit Logs
+    $pdo->exec("CREATE TABLE IF NOT EXISTS export_logs (
+      id SERIAL PRIMARY KEY,
+      admin_id INTEGER NOT NULL,
+      export_type VARCHAR(100),
+      exported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_log_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+    );");
+
 } catch (PDOException $e) {
     die("Database Schema Error: " . $e->getMessage());
 }
@@ -442,7 +451,7 @@ try {
         'users', 'categories', 'courses', 'sections', 'lessons', 
         'enrollments', 'progress', 'cart', 'wishlist', 'payments', 
         'payment_items', 'reviews', 'coupons', 'certificates', 
-        'notes', 'notifications', 'tickets', 'ticket_replies', 'ticket_activity_logs'
+        'notes', 'notifications', 'tickets', 'ticket_replies', 'ticket_activity_logs', 'export_logs'
     ];
     foreach ($seeded_tables as $tbl) {
         $pdo->exec("SELECT setval('{$tbl}_id_seq', COALESCE((SELECT MAX(id) FROM {$tbl}), 0) + 1, false)");
@@ -2902,7 +2911,7 @@ if (!in_array($page, $allowedPages)) {
           <a class="nav-link-klean active" href="#" onclick="switchView('dashboard-view');return false;"><i class="bi bi-speedometer2"></i> Classroom Stats</a>
           <a class="nav-link-klean" href="#" onclick="switchView('wishlist-view');return false;"><i class="bi bi-heart"></i> Bookmarks</a>
           <a class="nav-link-klean" href="#" onclick="switchView('profile-view');return false;"><i class="bi bi-gear"></i> Settings</a>
-          <a class="nav-link-klean" href="student/support/my-tickets.php"><i class="bi bi-ticket-detailed"></i> Support Tickets</a>
+          <a class="nav-link-klean" href="student/support/index.php"><i class="bi bi-ticket-detailed"></i> Support Tickets</a>
         </div>
         
         <!-- Main Panel -->
@@ -3124,7 +3133,8 @@ if (!in_array($page, $allowedPages)) {
           </div>
           <a class="nav-link-klean active" href="#" onclick="switchView('admin-view');return false;"><i class="bi bi-speedometer2"></i> Global Analytics</a>
           <a class="nav-link-klean" href="#" onclick="switchView('profile-view');return false;"><i class="bi bi-gear"></i> Settings</a>
-          <a class="nav-link-klean" href="admin/support/tickets.php"><i class="bi bi-ticket-detailed"></i> Support Management</a>
+          <a class="nav-link-klean" href="admin/support/index.php"><i class="bi bi-ticket-detailed"></i> Support Management</a>
+          <a class="nav-link-klean" href="admin/reports/index.php"><i class="bi bi-graph-up"></i> Reports & Exports</a>
         </div>
         
         <!-- Main Panel -->

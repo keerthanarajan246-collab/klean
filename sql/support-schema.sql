@@ -52,3 +52,14 @@ CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
 CREATE INDEX IF NOT EXISTS idx_ticket_replies_ticket_id ON ticket_replies(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_ticket_activity_logs_ticket_id ON ticket_activity_logs(ticket_id);
+
+-- Export Audit Logs Table
+CREATE TABLE IF NOT EXISTS export_logs (
+    id SERIAL PRIMARY KEY,
+    admin_id INTEGER NOT NULL,
+    export_type VARCHAR(100),
+    exported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_log_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_export_logs_admin_id ON export_logs(admin_id);
