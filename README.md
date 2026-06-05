@@ -1,6 +1,6 @@
 # Klean — Optimized Structured Online Learning Platform
  
-Klean is a premium, full-stack Udemy-like online learning platform built as a **Single PHP File (`index.php`)** backed by a **PostgreSQL Database**.
+Klean is a premium, full-stack Udemy-like online learning platform built as a **Single PHP File (`index.php`)** backed by a **PostgreSQL Database**, now featuring a professional **Support Ticket Management System** and an interactive **CSV Export & Reporting System** dashboard.
  
 This application provides a zero-fluff, highly structural classroom layout featuring modern aesthetics, smooth gradients, responsive navigation grids, glassmorphism UI widgets, CSS-drawn earnings charts, secure checkout transitions, and real-time database integrations.
  
@@ -8,8 +8,10 @@ This application provides a zero-fluff, highly structural classroom layout featu
  
 ## 🚀 Key Features
  
-- **Auto-Schema Setup**: Zero manual database configurations! The platform connects to your local PostgreSQL host and automatically creates the database (`klean_db`) and all 16 tables with foreign keys and cascade rules on the first run.
+- **Auto-Schema Setup**: Zero manual database configurations! The platform connects to your local PostgreSQL host and automatically creates the database (`klean_db`) and all 20 tables with foreign keys and cascade rules on the first run.
 - **Auto-Seed Engine**: Automatically hydrates the database with pre-configured mock data, including categories, courses, lessons, active student/instructor accounts, wishlists, shopping carts, coupons, reviews, and notes.
+- **Support Ticket Portal**: Live student-to-admin ticketing interface with email notifications (PHPMailer with SMTP and local log fallback), ticket categorizations, priority assignments, custom activity logs timeline, and support for admin-only internal notes.
+- **CSV Export & Interactive Analytics Dashboard**: Comprehensive admin reporting module featuring registrations, enrollments, and ticket creations visualized via Chart.js, alongside audit-logged CSV exports for all main databases.
 - **Secured AJAX Router**: Processes all form submissions and transactions (registration, login, cart changes, bookmarks, note-taking, and review posting) via POST/GET fetch requests, validating **CSRF tokens** and sanitizing inputs.
 - **Snappy Views Manager (14 views in 1 file)**: Snappy Single-Page Application (SPA) view switching, combined with standard server-side deep-linking page requests (e.g. `?page=courses`, `?page=player&course_id=1`).
 - **Interactive Player Theater**: Features a mock video player simulator, course outline checklist widgets, progress indicators, and a debounced auto-saving notebook saved in the database.
@@ -24,14 +26,15 @@ This application provides a zero-fluff, highly structural classroom layout featu
 | Language | PHP 8+ (No external frameworks) |
 | Database | PostgreSQL (PDO connection adapters) |
 | Styling | Bootstrap 5, Bootstrap Icons, Custom CSS |
-| Typography | Plus Jakarta Sans (Google Fonts) |
+| Analytics | Chart.js (Graphical Admin Reporting Dashboard) |
+| Mail | PHPMailer (SMTP configuration with file fallback) |
 | Client Logic | Vanilla JavaScript (Fetch API + DOM Hydration) |
  
 ---
  
-## 📂 PostgreSQL Relational Schema (16 Tables)
+## 📂 PostgreSQL Relational Schema (20 Tables)
  
-The platform is designed with 16 fully relational database tables:
+The platform is designed with 20 fully relational database tables:
  
 | # | Table | Description |
 |---|-------|-------------|
@@ -51,6 +54,10 @@ The platform is designed with 16 fully relational database tables:
 | 14 | `certificates` | Generates certified unique reference numbers for course graduates |
 | 15 | `notes` | Holds notebook drafts written in the course player (supports auto-save to DB) |
 | 16 | `notifications` | Keeps alert messages shown in the navigation bell |
+| 17 | `tickets` | Stores support tickets (subject, category, priority, status, message) |
+| 18 | `ticket_replies` | Stores replies on ticket threads (supports student, admin, and admin-only internal notes) |
+| 19 | `ticket_activity_logs` | Logs historical lifecycle updates of tickets (e.g., creations, status updates, resolutions) |
+| 20 | `export_logs` | Logs administrative CSV export audit trail (who exported what data and when) |
  
 ---
  
@@ -67,7 +74,7 @@ Make sure you have an active local server environment running Apache (or equival
 ### Step 2: Database Creation
  
 > ⚡ **Zero Setup Requirement!**
-> The platform is engineered to automatically detect if `klean_db` is missing, auto-connect to the system `postgres` database, execute `CREATE DATABASE klean_db`, auto-build the schemas, and seed all 16 relational tables with mock data on the very first load!
+> The platform is engineered to automatically detect if `klean_db` is missing, auto-connect to the system `postgres` database, execute `CREATE DATABASE klean_db`, auto-build the schemas, and seed all 20 relational tables with mock data on the very first load!
 > Just ensure your PostgreSQL server is active and the credentials specified in `index.php` have database creation privileges.
  
 ### Step 3: Deploy Workspace Files
@@ -75,11 +82,14 @@ Make sure you have an active local server environment running Apache (or equival
 1. Create a project directory named `klean` inside your web server's document root:
    - **XAMPP**: `C:/xampp/htdocs/klean/`
    - **WampServer**: `C:/wamp64/www/klean/`
-2. Place the `index.php` file inside this `klean` folder.
+2. Place the workspace directory contents inside this `klean` folder.
 ```
 C:/xampp/htdocs/
 └── klean/
-    └── index.php   ← place your file here
+    ├── index.php
+    ├── admin/
+    ├── student/
+    └── includes/
 ```
  
 ### Step 4: Check Configuration Settings
@@ -102,14 +112,7 @@ define('DB_NAME', 'klean_db');
 http://localhost/klean/
 ```
  
-or
- 
-```
-http://localhost/klean/index.php
-```
- 
 3. The platform will **automatically check connection states, auto-generate `klean_db` if not found, create the tables with correct sequences, and seed the mock data**. You will be redirected straight to the Landing Page.
-> ℹ️ If PostgreSQL is not active or credentials are incorrect, a styled warning card will appear on screen to help you troubleshoot.
  
 ---
  
@@ -128,6 +131,7 @@ http://localhost/klean/index.php
 - Click **"View Certificate"** to open a dynamic print-ready completion modal with Alex's cryptographic verification code
 - Open cart, enter coupon **`KLEAN20`** to receive a 20% discount
 - Open course player and write lesson notes (text saves automatically as you type!)
+- Open **"Support Tickets"** in the student panel sidebar, submit support tickets, view details, track progress, and reply.
 ---
  
 ### 2. 👩‍🏫 Instructor Account
@@ -151,8 +155,10 @@ http://localhost/klean/index.php
 | Password | `admin123` |
  
 **Features to test:**
-- View site-wide operations analytics
-- Access active registrants table showing account statuses
+- View site-wide operations analytics.
+- Access active registrants table showing account statuses.
+- Open **"Support Management"** in the sidebar to review student tickets, filter entries, change statuses, reply publicly, or add admin-only **Internal Notes**.
+- Open **"Reports & Exports"** in the sidebar to view dynamic statistics charts (registrations, enrollments, tickets trends) rendered with Chart.js, filter support tickets, and download audited CSV dumps of system tables.
 ---
  
 ## 🔒 Security Operations
@@ -218,25 +224,30 @@ function sanitizeInput($data) {
  
 ```
 klean/
-├── index.php        # Entire application (PHP + HTML + CSS + JS)
-└── db-test.php      # Standalone PostgreSQL Database Explorer (Visual Utility)
-```
- 
-The project includes the main application file and a custom database inspection utility:
- 
-```
-index.php
-├── Section 1  — DB Config & PDO Connection
-├── Section 2  — Session Start & CSRF Token Generation
-├── Section 3  — Auto Table Creation (16 tables)
-├── Section 4  — Auto Seed Data
-├── Section 5  — AJAX Router (handles all fetch() calls)
-├── Section 6  — PHP Helper Functions
-├── Section 7  — <style> (all custom CSS inline)
-├── Section 8  — HTML Views (14 SPA views)
-└── Section 9  — <script> (all JS inline)
-
-db-test.php          # Visual utility to inspect database status, tables, and rows
+├── index.php                 # Core Application & DB Initializer
+├── db-test.php               # Standalone PostgreSQL Database Explorer (Visual Utility)
+├── styles.css                # Shared Platform Custom CSS Stylesheet
+├── sent_emails.log           # Fallback for local email logging (PHPMailer SMTP backup)
+├── includes/
+│   ├── support-helpers.php   # Layout views (headers, sidebars, footers) & DB logs Helpers
+│   └── email-service.php     # SMTP Mailer wrapper using PHPMailer (with sent_emails.log fallback)
+├── sql/
+│   └── support-schema.sql    # Standalone support tickets database SQL schema backup
+├── student/
+│   └── support/
+│       ├── index.php         # Student Support Dashboard (lists personal tickets)
+│       ├── create.php        # Form to open new support tickets (validates CSRF)
+│       └── details.php       # Live ticket conversation thread & timeline for students
+└── admin/
+    ├── support/
+    │   ├── index.php         # Admin Support Operations Dashboard (filter & search)
+    │   └── details.php       # Ticket workspace to reply, change status, or post internal notes
+    └── reports/
+        ├── index.php         # Admin Reports Dashboard (Stats cards, Chart.js visual graphs)
+        ├── export-tickets.php     # Audited CSV exporter for support tickets
+        ├── export-users.php       # Audited CSV exporter for active platform users
+        ├── export-courses.php     # Audited CSV exporter for course catalog inventory
+        └── export-enrollments.php # Audited CSV exporter for enrollments registry
 ```
  
 ---
@@ -261,34 +272,39 @@ db-test.php          # Visual utility to inspect database status, tables, and ro
 | `admin-view` | Global Operations Panel |
  
 ---
-
-## 🛠️ Recent Platform Enhancements (v2.2)
-
-We have recently upgraded the platform with several modern features, bug fixes, and layout alignments to create an elite user experience:
-
-### 1. Standalone Database Explorer (`db-test.php`)
+ 
+## 🛠️ Recent Platform Enhancements
+ 
+### 1. Standalone Database Explorer (`db-test.php`) (v2.2)
 A custom, beautifully styled web-based PostgreSQL browser. Visit `http://localhost/klean/db-test.php` in your browser to:
 - Test and debug local PostgreSQL connection parameters.
 - View auto-generated tables, column structures, and data types.
 - Preview live table rows (up to 50 results) using a responsive, fluid design system.
-
-### 2. Upgraded Payment Room
+ 
+### 2. Upgraded Payment Room (v2.2)
 A fully featured multi-channel checkout room supporting:
 - **Debit/Credit Card:** Auto-formats 16-digit card inputs with spaces and expiry dates with slashes. Features a visual debit card mockup that matches user input in real-time and automatically detects card brands (Visa/Mastercard).
 - **UPI (Unified Payments Interface):** Dynamically formatted scan-to-pay QR code layout with quick selectors for GPay, PhonePe, and Paytm.
 - **Digital Wallets:** Active state style mapping for Paytm, PhonePe, and Amazon Pay.
-- **Cash / Offline Checkout:** Fully simulated bypass module allowing immediate course enrollment for quick sandbox testing.
-
-### 3. Layout Alignments & Visual Fixes
+- **Cash / Offline Checkout:** Fully simulated bypass module allowing immediate course enrollment for sandbox testing.
+ 
+### 3. Layout Alignments & Visual Fixes (v2.2)
 - **Navbar Stretch:** Modified the navbar container from centered to fluid (`container-fluid px-4 px-lg-5`) so that the brand logo aligns perfectly with the sidebar and the profile aligns with the right margins.
 - **Sidebar Header Spacing:** Added dedicated vertical spacing and alignment rules for `.sidebar-logo` to prevent squished layouts.
 - **Progress Bar Customization:** Enabled visible, premium HSL purple progress bars (`.progress-bar-custom`) on student classrooms tracking cards.
 - **Self-Healing Session Check:** Added an active user verification check to the session lifecycle. If the database is reset or reseeded, the system automatically redirects the browser to a clean logout rather than crashing with foreign key constraint violations.
 
+### 4. Support Tickets & CSV Export Analytics (v2.3)
+- **Support Tickets Portal**: Built a complete ticketing system matching platform aesthetics. Allows students to submit/track queries, and admins to manage them.
+- **Admin-Only Internal Notes**: Enabled support specialists to write notes visible only to the admin team within a ticket.
+- **Mail Service & Fallback**: Programmed PHPMailer SMTP dispatching with automated log fallbacks to `sent_emails.log` for offline developer testing.
+- **Reporting Analytics (Chart.js)**: Integrated interactive dashboards visualizing course enrollments, user signups, and support tickets.
+- **Audit Logging**: Structured a schema tracking and logging every administrative CSV download to `export_logs`.
+ 
 ---
- 
+  
 ## ⚠️ Common Errors & Fixes
- 
+  
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `Connection refused` or `could not connect to server` | PostgreSQL server not running | Start the PostgreSQL service using pgAdmin or system services |
@@ -296,10 +312,10 @@ A fully featured multi-channel checkout room supporting:
 | `database "klean_db" does not exist` | Auto-creation failed | Ensure `DB_USER` has rights to run `CREATE DATABASE` |
 | Blank white page | PHP error hidden | Add `error_reporting(E_ALL);` at top of `index.php` |
 | `localhost refused` | Apache not running | Start Apache server in XAMPP/WAMP |
- 
+  
 ---
- 
+  
 ## 📄 License
- 
+  
 Built for educational and demonstration purposes.  
 &copy; 2026 **Klean Learning Inc.** — Built with Bootstrap 5 & Vanilla PHP.
