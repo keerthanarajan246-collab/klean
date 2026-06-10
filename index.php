@@ -3770,7 +3770,21 @@ if (!in_array($page, $allowedPages)) {
       }
       
       const bestsellerBadge = parseInt(c.is_bestseller) === 1 ? '<span class="badge-bestseller">BESTSELLER</span>' : '';
-      const priceText = parseFloat(c.price) === 0 ? 'Free' : `₹${parseFloat(c.price).toFixed(2)}`;
+      const realPrice = parseFloat(c.price);
+      const discPrice = parseFloat(c.discount_price || c.price);
+      
+      let priceHtml = '';
+      if (discPrice === 0) {
+        priceHtml = '<h5 class="fw-800 text-primary m-0">Free</h5>';
+      } else if (parseFloat(c.discount_price) > 0 && realPrice > discPrice) {
+        priceHtml = `
+          <div class="d-flex flex-column justify-content-center">
+            <h5 class="fw-800 text-primary m-0" style="line-height:1;">₹${discPrice.toFixed(2)}</h5>
+            <span class="text-muted text-decoration-line-through" style="font-size:0.75rem;">₹${realPrice.toFixed(2)}</span>
+          </div>`;
+      } else {
+        priceHtml = `<h5 class="fw-800 text-primary m-0">₹${realPrice.toFixed(2)}</h5>`;
+      }
       
       col.innerHTML = `
         <div class="course-card">
@@ -3794,7 +3808,7 @@ if (!in_array($page, $allowedPages)) {
               <span class="text-muted fs-8">(${c.review_count})</span>
             </div>
             <div class="d-flex align-items-center justify-content-between mt-auto pt-2 border-top">
-              <h5 class="fw-800 text-primary m-0">${priceText}</h5>
+              ${priceHtml}
               <button class="btn btn-outline-klean py-1 px-3 fs-8 fw-700 rounded-3" style="font-size:0.75rem;" onclick="event.stopPropagation(); quickAddToCart(${c.id})">
                 <i class="bi bi-cart-plus me-1"></i>Cart
               </button>
